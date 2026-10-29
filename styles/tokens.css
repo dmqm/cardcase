@@ -1,0 +1,30 @@
+:root {
+  --bg: #0B0B0D;
+  --case: #141417;
+  --gold: #C8A96A;
+  --gold-secret: #E8C87A;
+  --text: #EDE9E3;
+  --muted: #8C8780;
+  --line: rgba(200, 169, 106, .22);
+
+  --font-sans: "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+  --font-serif: Songti SC, "Noto Serif SC", STSong, serif;
+
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 40px;
+
+  --radius: 12px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+
+  --dur: .2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 0s;
+  }
+}

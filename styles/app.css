@@ -1,0 +1,139 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: var(--font-sans);
+  background-color: var(--bg);
+  background-image: radial-gradient(1200px 600px at 50% -10%, rgba(200, 169, 106, .16), transparent 70%);
+  background-repeat: no-repeat;
+}
+
+.site-header {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--s4) var(--s4) var(--s3);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--gold);
+}
+
+.stats {
+  display: flex;
+  gap: var(--s4);
+  margin: var(--s2) 0 0;
+}
+
+.stats div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+}
+
+.stats dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.stats dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--s2);
+  margin-top: var(--s3);
+}
+
+.tabs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+  text-decoration: none;
+  transition: color var(--dur), border-color var(--dur);
+}
+
+.tabs a:hover,
+.tabs a:focus-visible {
+  color: var(--text);
+  border-color: var(--gold);
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--s4) var(--s4) 120px;
+}
+
+.case {
+  padding: var(--s3);
+  border-radius: var(--radius);
+  background: var(--case);
+  box-shadow: var(--shadow);
+}
+
+.empty {
+  padding: var(--s6) var(--s4);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.placeholder {
+  padding: var(--s6) 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+.fab {
+  position: fixed;
+  right: var(--s4);
+  bottom: calc(var(--s4) + env(safe-area-inset-bottom));
+  z-index: 20;
+  min-height: 44px;
+  padding: 0 var(--s5);
+  border: 0;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--bg);
+  font: inherit;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform var(--dur);
+}
+
+.fab:active {
+  transform: scale(.97);
+}
+
+.site-footer {
+  padding: var(--s5) var(--s4) 96px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}

@@ -1,0 +1,9 @@
+{
+  "name": "cardcase",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "test": "node --test tests/"
+  }
+}
