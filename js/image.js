@@ -8,11 +8,16 @@ import { computeHomography } from './geom.js';
 const DECODE_MAX_EDGE = 2400;
 const SIZE_LIMIT = 150 * 1024;
 
-/** 卡片目标画布尺寸：63:88 竖版，短边对齐 outLongEdge（1000 → 1000×1397）。 */
-export function outputSize(outLongEdge = 1000) {
-  const width = Math.max(1, Math.round(outLongEdge));
-  const height = Math.max(1, Math.round((outLongEdge * 88) / 63));
-  return { width, height };
+/** 卡片目标画布尺寸：短边对齐 outLongEdge，长边按 aspect（宽/高）取整。默认 63:88 竖版 → 1000×1397。 */
+export function outputSize(outLongEdge = 1000, aspect = 63 / 88) {
+  const edge = Math.max(1, Math.round(outLongEdge));
+  const ratio = Number.isFinite(aspect) && aspect > 0 ? aspect : 63 / 88;
+  if (ratio >= 1) {
+    // 横版：高是短边，宽延伸。
+    return { width: Math.max(1, Math.round(edge * ratio)), height: edge };
+  }
+  // 竖版：宽是短边，高延伸。
+  return { width: edge, height: Math.max(1, Math.round(edge / ratio)) };
 }
 
 /**
@@ -85,15 +90,16 @@ function encodeCanvas(canvas, type, quality) {
  * 按校正四角重投影并压缩。
  * @param {ImageBitmap} bitmap 源图
  * @param {Array<[number,number]>} corners 源图上的 4 点（左上→右上→右下→左下）
- * @param {number} [outLongEdge=1000] 目标短边参考值
+ * @param {number} [outLongEdge=1000] 目标短边
+ * @param {number} [aspect=63/88] 目标宽高比（竖版 63/88，横版 88/63）
  * @returns {Promise<Blob>} image/webp q0.8（不支持时 image/jpeg q0.85），超 150KB 用 q0.65 重编一次
  */
-export async function warpToBlob(bitmap, corners, outLongEdge = 1000) {
+export async function warpToBlob(bitmap, corners, outLongEdge = 1000, aspect = 63 / 88) {
   if (!corners || corners.length !== 4) {
     throw new Error('四个角没摆好，重新对一下');
   }
 
-  const { width, height } = outputSize(outLongEdge);
+  const { width, height } = outputSize(outLongEdge, aspect);
   const targetCorners = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]];
 
   // 目标 → 源的映射：逐目标像素反查源坐标，避免空洞。

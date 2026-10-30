@@ -657,6 +657,14 @@ body.import-open {
   padding: var(--s3) 0;
 }
 
+.card-ratio {
+  flex: 1 0 100%; /* 小字独占一行，按钮排在其下 */
+  min-height: 24px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
 /* 第三步：表单 */
 
 .import-form {

@@ -20,6 +20,25 @@ const STEP_TITLES = {
   form: '填写卡片信息',
 };
 
+/** 按朝向取的比例（宽/高）与小字文案。 */
+const ASPECT = { portrait: 63 / 88, landscape: 88 / 63 };
+const RATIO_LABEL = { portrait: '竖向卡 · 63:88', landscape: '横向卡 · 88:63' };
+
+function midpoint(a, b) {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+function distance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+/** 朝向：宽度 = 左/右对边中点距离，高度 = 上/下对边中点距离，宽大于高判横向。 */
+export function detectOrientation(corners) {
+  const w = distance(midpoint(corners[0], corners[3]), midpoint(corners[1], corners[2]));
+  const h = distance(midpoint(corners[0], corners[1]), midpoint(corners[3], corners[2]));
+  return w > h ? 'landscape' : 'portrait';
+}
+
 let state = null; // { bitmap, corners, onSaved, escHandler }
 
 /** 四角默认位置：贴边内缩 6%，覆盖卡面常见外框。 */
@@ -65,6 +84,7 @@ export function openImport({ onSaved = null } = {}) {
       <div class="import-step" data-step="crop" hidden>
         <div class="crop-stage"></div>
         <div class="crop-tools">
+          <span class="card-ratio" data-ratio aria-live="polite"></span>
           <button type="button" class="btn" data-import-action="back-pick">重选</button>
           <button type="button" class="btn" data-import-action="rotate">旋转 90°</button>
           <button type="button" class="btn btn-primary" data-import-action="confirm-crop">下一步</button>
@@ -73,6 +93,7 @@ export function openImport({ onSaved = null } = {}) {
 
       <div class="import-step" data-step="form" hidden>
         <form class="import-form" novalidate>
+          <p class="card-ratio" data-ratio></p>
           <label class="import-field">
             <span class="import-label">系列 <em class="req" aria-hidden="true">*</em></span>
             <input name="series" list="import-series-list" autocomplete="off" placeholder="如 MOLLY" required>
@@ -149,9 +170,11 @@ export function openImport({ onSaved = null } = {}) {
       return;
     }
     state.bitmap = bitmap;
+    state.orientation = null;
     state.corners = defaultCorners(bitmap);
     setStep('crop');
     renderCrop();
+    updateRatioLine();
   }
 
   /* ---------- 第二步：校正 ---------- */
@@ -202,7 +225,16 @@ export function openImport({ onSaved = null } = {}) {
         state.corners[index] = { x, y };
         move();
       });
+      handle.addEventListener('pointerup', updateRatioLine);
+      handle.addEventListener('pointercancel', updateRatioLine);
     }
+  }
+
+  /** 校正步的实时小字：随当前四角判定朝向并显示。 */
+  function updateRatioLine() {
+    if (!state?.corners) return;
+    const line = overlay.querySelector('.crop-tools [data-ratio]');
+    if (line) line.textContent = RATIO_LABEL[detectOrientation(state.corners)];
   }
 
   /** 四点绕图片中心顺时针转 90°，并按新方位重排，保持编号贴着画面方位。 */
@@ -220,13 +252,14 @@ export function openImport({ onSaved = null } = {}) {
       p.y = Math.min(Math.max(p.y, 0), bitmap.height - 1);
     }
     renderCrop();
+    updateRatioLine();
   }
 
-  /** 校正有效才放行：单应矩阵非退化，四角双向映射都是有限值。 */
+  /** 校正有效才放行：单应矩阵非退化，四角双向映射都是有限值。目标尺寸随朝向的比例取。 */
   function validateCorners() {
-    const { width, height } = outputSize(1000);
+    const out = outputSize(1000, ASPECT[state.orientation]);
     const src = state.corners.map((p) => [p.x, p.y]);
-    const target = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]];
+    const target = [[0, 0], [out.width - 1, 0], [out.width - 1, out.height - 1], [0, out.height - 1]];
     const forward = computeHomography(src, target);
     const backward = computeHomography(target, src);
     if (!forward || !backward) return false;
@@ -244,6 +277,10 @@ export function openImport({ onSaved = null } = {}) {
       toast('先选一张卡的照片');
       setStep('pick');
       return;
+    }
+    state.orientation = detectOrientation(state.corners);
+    for (const line of overlay.querySelectorAll('[data-ratio]')) {
+      line.textContent = RATIO_LABEL[state.orientation];
     }
     if (!validateCorners()) {
       toast('四个角没摆好，重新对一下');
@@ -272,19 +309,21 @@ export function openImport({ onSaved = null } = {}) {
     saveBtn.disabled = true;
     saveBtn.textContent = '存入中…';
     try {
-      const { width, height } = outputSize(1000);
+      const out = outputSize(1000, ASPECT[state.orientation]);
       const card = createCard({
         series,
         character: form.character.value,
         style: form.querySelector('input[name="style"]:checked')?.value ?? 'regular',
         pulledAt: form.pulledAt.value || undefined,
         note: form.note.value,
-        width,
-        height,
+        width: out.width,
+        height: out.height,
       });
       const blob = await warpToBlob(
         state.bitmap,
         state.corners.map((p) => [p.x, p.y]),
+        1000,
+        ASPECT[state.orientation],
       );
       await saveCard(card, blob);
       const { onSaved } = state;
