@@ -6,7 +6,7 @@
 import { decodeFile, warpToBlob, outputSize } from './image.js';
 import { createCard, formatLocalDate } from './model.js';
 import { saveCard, StorageQuotaError } from './db.js';
-import { toast } from './ui.js';
+import { toast, playCardEntrance } from './ui.js';
 import { computeHomography, applyHomography } from './geom.js';
 
 const SERIES_SUGGESTIONS = [
@@ -328,7 +328,8 @@ export function openImport({ onSaved = null } = {}) {
       await saveCard(card, blob);
       const { onSaved } = state;
       teardown();
-      onSaved?.();
+      await onSaved?.(); // 等卡墙真的渲染完，再让新卡飞入
+      playCardEntrance(card.id);
       toast('已入柜');
     } catch (error) {
       // 配额不足或校正出错：层保持打开，数据一条没写。

@@ -4,6 +4,7 @@
 import { styleLabel } from './model.js';
 import { computeStats, listSeries, filterCards } from './query.js';
 import { getImage } from './db.js';
+import { initTilt, enableGyro } from './tilt.js';
 
 /* ---------- 小工具 ---------- */
 
@@ -237,6 +238,68 @@ export function renderGallery({ cards, prefs, onChange = null } = {}) {
         /* 图片缺失时保留 --case 底衬，不打断渲染 */
       });
   }
+
+  ensureGyroButton();
+  initTilt(grid);
+}
+
+/* ---------- 陀螺仪按钮 ---------- */
+
+/**
+ * 支持 DeviceOrientationEvent 的设备才显示「让卡片跟着手机动」；
+ * 按钮挂在 #view-gallery 底部，不参与 #grid 重渲染。
+ */
+function ensureGyroButton() {
+  if (typeof DeviceOrientationEvent === 'undefined') return; // 无陀螺仪能力时不见此钮
+  const gallery = document.getElementById('view-gallery');
+  if (!gallery) return;
+
+  let btn = document.getElementById('gyro-toggle');
+  if (btn) return;
+  btn = document.createElement('button');
+  btn.id = 'gyro-toggle';
+  btn.type = 'button';
+  btn.className = 'btn gyro-btn';
+  btn.textContent = '让卡片跟着手机动';
+  btn.addEventListener('click', async () => {
+    const ok = await enableGyro();
+    if (ok) {
+      btn.classList.add('is-on');
+      toast('卡片会跟着手机动了');
+    }
+    // 拒绝授权 / 抛错：静默，不发提示
+  });
+  gallery.append(btn);
+}
+
+/* ---------- 新卡飞入 ---------- */
+
+const ENTER_GUARD_MS = 1300; // 与 CSS 动画时长一致，animationend 丢失时的兜底
+
+/**
+ * 新入柜的卡播一次飞入（translateY + scale + 透明 → 原位）。
+ * reduce 态直接出现；动画中按任意处可跳过。只在卡墙渲染完成后调用。
+ * @param {string} id - 新卡的 id
+ */
+export function playCardEntrance(id) {
+  const grid = document.getElementById('grid');
+  const card = grid?.querySelector(`.card[data-id="${CSS.escape(String(id))}"]`);
+  if (!card) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; // 减少动态：直接出现
+
+  card.classList.add('card-enter');
+  let timer = 0;
+  const finish = () => {
+    if (timer === -1) return;
+    timer = -1;
+    card.classList.remove('card-enter');
+    card.removeEventListener('animationend', finish);
+    document.removeEventListener('pointerdown', skip, true);
+  };
+  // capture 阶段接住按下即可跳过，不影响接下来的 click（进入详情）语义
+  const skip = () => finish();
+  document.addEventListener('pointerdown', skip, true);
+  timer = setTimeout(finish, ENTER_GUARD_MS);
 }
 
 /* ---------- 卡片详情 ---------- */

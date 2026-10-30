@@ -222,7 +222,8 @@ main {
   aspect-ratio: 63 / 88;
   overflow: hidden;
   cursor: pointer;
-  transition: border-color var(--dur);
+  transform: none;
+  transition: border-color var(--dur), box-shadow var(--dur), transform var(--dur);
 }
 
 .card img {
@@ -237,8 +238,53 @@ main {
   outline: none;
 }
 
+/* 按下：轻微抬升 + 阴影加深（与指针倾斜并存时以内联 transform 为准，只保留阴影变化） */
+.card:active {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .5);
+}
+
+/* ---------- 隐藏款卡片：金色呼吸光 ---------- */
+
 .card.is-secret {
-  border-color: var(--gold-secret); /* 发光留到 Task 9 */
+  border-color: var(--gold-secret);
+  animation: secret-glow 6s ease-in-out infinite;
+}
+
+@keyframes secret-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(232, 200, 122, 0); }
+  50% { box-shadow: 0 0 14px rgba(232, 200, 122, .3); }
+}
+
+/* ---------- 新卡飞入（保存成功入柜时一次） ---------- */
+
+.card.card-enter {
+  animation: card-enter .9s cubic-bezier(.22, 1, .36, 1);
+}
+
+/* 隐藏款同时入柜时：飞入结束后再接呼吸光，两个动画都跑 */
+.card.is-secret.card-enter {
+  animation:
+    card-enter .9s cubic-bezier(.22, 1, .36, 1),
+    secret-glow 6s ease-in-out .9s infinite;
+}
+
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(24px) scale(.92); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+    transform: none !important; /* 倾斜 / 陀螺仪 / 飞入的 transform 一律静止 */
+  }
+  .card.is-secret,
+  .card.card-enter,
+  .card.is-secret.card-enter {
+    animation: none; /* 呼吸光与飞入都关掉 */
+  }
 }
 
 .grid-note {
@@ -253,6 +299,19 @@ main {
   text-align: center;
   color: var(--muted);
   font-size: 14px;
+}
+
+/* ---------- 陀螺仪按钮 ---------- */
+
+.gyro-btn {
+  display: flex;
+  justify-content: center;
+  margin: var(--s3) auto 0;
+}
+
+.gyro-btn.is-on {
+  border-color: var(--gold);
+  color: var(--gold);
 }
 
 /* ---------- 按钮 ---------- */
