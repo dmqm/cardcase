@@ -87,6 +87,20 @@ function encodeCanvas(canvas, type, quality) {
 }
 
 /**
+ * 让出两帧，保证调用前的 DOM 变更（如「存入中…」）真正上屏后再继续。
+ * 单帧 rAF 不够：微任务续体会在同一帧绘制前就恢复执行；两帧才能落到实际绘制之后。
+ * 隐藏文档里 rAF 停发，用 100ms 超时兜底，避免 Promise 永不 settle。
+ */
+function afterPaint() {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = () => { if (!settled) { settled = true; resolve(); } };
+    requestAnimationFrame(() => requestAnimationFrame(done));
+    setTimeout(done, 100); // 隐藏文档里 rAF 停发时的兜底
+  });
+}
+
+/**
  * 按校正四角重投影并压缩。
  * @param {ImageBitmap} bitmap 源图
  * @param {Array<[number,number]>} corners 源图上的 4 点（左上→右上→右下→左下）
@@ -121,8 +135,8 @@ export async function warpToBlob(bitmap, corners, outLongEdge = 1000, aspect = 6
   const out = outCtx.createImageData(width, height);
   const pixels = out.data;
 
-  // 让「存入中…」等 loading 态先上屏，再开始逐像素循环，避免主线程被同步占满。
-  await new Promise((r) => requestAnimationFrame(() => r()));
+  // 让「存入中…」等 loading 态先上屏（让出两帧，隐藏文档下超时兜底），再开始逐像素循环。
+  await afterPaint();
 
   // 行主序单应矩阵内联展开计算，1.4M 像素逐点反查。
   for (let v = 0; v < height; v++) {
