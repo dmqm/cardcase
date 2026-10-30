@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>db smoke</title>
+</head>
+<body>
+<pre id="out"></pre>
+<script type="module">
+import {
+  saveCard,
+  updateCard,
+  listCards,
+  getImage,
+  deleteCard,
+  clearAll,
+} from '../js/db.js';
+import { loadPrefs, savePrefs, clearPrefs } from '../js/prefs.js';
+
+const out = document.getElementById('out');
+const lines = [];
+let failed = 0;
+
+function log(text) {
+  lines.push(text);
+  out.textContent = lines.join('\n');
+}
+
+async function check(name, fn) {
+  try {
+    await fn();
+    log(`PASS ${name}`);
+  } catch (error) {
+    failed += 1;
+    const reason = error && error.message ? error.message : String(error);
+    log(`FAIL ${name}: ${reason}`);
+  }
+}
+
+const card = {
+  id: 't1',
+  series: '测试',
+  character: '',
+  style: 'regular',
+  pulledAt: '2026-10-29',
+  note: '',
+  width: 10,
+  height: 10,
+  createdAt: 1,
+};
+
+const blob = new Blob([new Uint8Array(1024)], { type: 'image/webp' });
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+// 前置清理，保证断言从空库开始
+try {
+  await clearAll();
+} catch (error) {
+  log(`FAIL 前置清理: ${error && error.message ? error.message : String(error)}`);
+  failed += 1;
+}
+
+await check('保存卡片与图片', async () => {
+  await saveCard(card, blob);
+});
+
+await check('listCards 长度为 1', async () => {
+  const cards = await listCards();
+  assert(Array.isArray(cards), 'listCards 未返回数组');
+  assert(cards.length === 1, `期望 1，实际 ${cards.length}`);
+});
+
+await check('getImage 返回 1024 字节图片', async () => {
+  const image = await getImage('t1');
+  assert(image !== null && image !== undefined, '图片为空');
+  assert(image.size === 1024, `期望 1024，实际 ${image.size}`);
+});
+
+await check('updateCard 更新 note', async () => {
+  await updateCard({ ...card, note: '新备注' });
+  const cards = await listCards();
+  assert(cards.length === 1, `期望 1 张卡，实际 ${cards.length}`);
+  assert(cards[0].note === '新备注', `note 为 ${String(cards[0].note)}`);
+});
+
+await check('deleteCard 后 listCards 为空', async () => {
+  await deleteCard('t1');
+  const cards = await listCards();
+  assert(cards.length === 0, `期望 0，实际 ${cards.length}`);
+});
+
+await check('deleteCard 后 getImage 为 null', async () => {
+  const image = await getImage('t1');
+  assert(image === null, `期望 null，实际 ${image === undefined ? 'undefined' : String(image)}`);
+});
+
+await check('prefs 保存后原样读回', async () => {
+  savePrefs({ series: 'MEGA', style: 'secret', sort: 'series', motion: 'off' });
+  const prefs = loadPrefs();
+  assert(prefs.series === 'MEGA', `series 为 ${String(prefs.series)}`);
+  assert(prefs.style === 'secret', `style 为 ${String(prefs.style)}`);
+  assert(prefs.sort === 'series', `sort 为 ${String(prefs.sort)}`);
+  assert(prefs.motion === 'off', `motion 为 ${String(prefs.motion)}`);
+});
+
+await check('prefs 清空后回到默认值', async () => {
+  clearPrefs();
+  const prefs = loadPrefs();
+  assert(prefs.series === null, `series 为 ${String(prefs.series)}`);
+  assert(prefs.style === null, `style 为 ${String(prefs.style)}`);
+  assert(prefs.sort === 'recent', `sort 为 ${String(prefs.sort)}`);
+  assert(prefs.motion === 'auto', `motion 为 ${String(prefs.motion)}`);
+});
+
+if (failed === 0) {
+  log('SMOKE PASS');
+  document.title = 'SMOKE PASS';
+} else {
+  log(`SMOKE FAIL (${failed} 项失败)`);
+  document.title = 'SMOKE FAIL';
+}
+</script>
+</body>
+</html>
