@@ -27,6 +27,29 @@ function cardLabel(card) {
   return [card.series, card.character].filter(Boolean).join(' · ');
 }
 
+/* ---------- 首次空柜安全提示 ---------- */
+
+const TIP_SHOWN_KEY = 'cardcase.tipShown';
+export const SAFETY_TIP_TEXT = '数据只存在这台手机的浏览器里。Safari 长期不打开可能被清理，建议「添加到主屏幕」并定期导出备份。';
+
+/**
+ * 首次看到空柜时补一条数据安全提示，只出现一次（localStorage 记账）。
+ * localStorage 不可用就静默跳过：提示是锦上添花，不该打断空态。
+ */
+function showFirstVisitTip(emptyState) {
+  try {
+    const storage = globalThis.localStorage;
+    if (!storage || storage.getItem(TIP_SHOWN_KEY)) return;
+    storage.setItem(TIP_SHOWN_KEY, '1');
+    const tip = document.createElement('p');
+    tip.className = 'safety-tip';
+    tip.textContent = SAFETY_TIP_TEXT;
+    emptyState.append(tip);
+  } catch {
+    /* 隐私模式 / 被禁用：静默 */
+  }
+}
+
 /** 格式化 'YYYY-MM-DD' → '10 月 29 日'；入参不合法时原样返回。 */
 export function formatDate(date) {
   const match = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(date ?? ''));
@@ -173,6 +196,7 @@ export function renderGallery({ cards, prefs, onChange = null } = {}) {
     emptyState.hidden = false;
     grid.hidden = true;
     grid.innerHTML = '';
+    showFirstVisitTip(emptyState);
     return;
   }
 

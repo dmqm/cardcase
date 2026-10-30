@@ -821,3 +821,116 @@ body.import-open {
   flex-wrap: wrap;
   padding-top: var(--s3);
 }
+
+/* ---------- 数据页 ---------- */
+
+/* 顶部安全提示条：在正常文档流里，不遮挡内容 */
+.data-tip {
+  max-width: 560px;
+  margin: 0 0 var(--s3);
+  padding: var(--s3) var(--s4);
+  border: 1px solid rgba(200, 169, 106, .45);
+  border-radius: var(--radius);
+  background: rgba(200, 169, 106, .08);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.data-panel {
+  display: flex;
+  flex-direction: column; /* 手机单列 */
+  gap: var(--s3);
+}
+
+@media (min-width: 768px) {
+  .data-panel {
+    max-width: 560px;
+    margin: 0 auto; /* 桌面居中 */
+  }
+}
+
+.data-block {
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--case);
+}
+
+.data-title {
+  margin: 0 0 var(--s1);
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--gold);
+}
+
+.data-desc {
+  margin: 0 0 var(--s3);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.data-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.data-size {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* 危险操作：警示色填充，比描边更醒目 */
+#btn-clear-all:disabled {
+  border-color: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+#btn-clear-all:not(:disabled) {
+  border-color: #E0604F;
+  background: rgba(224, 96, 79, .16);
+  color: #E0604F;
+  font-weight: 600;
+}
+
+#btn-import-replace {
+  border-color: rgba(224, 96, 79, .4);
+  color: #E0604F;
+}
+
+/* 输入「清空」解锁的输入框 */
+.clear-input {
+  flex: 1;
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  transition: border-color var(--dur);
+}
+
+.clear-input:focus-visible {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.clear-input::placeholder {
+  color: var(--muted);
+}
+
+/* 空柜首次安全提示（展馆空态里） */
+.safety-tip {
+  margin: var(--s3) 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+}

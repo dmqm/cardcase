@@ -29,7 +29,36 @@
       <div id="grid" class="case"></div>
     </section>
     <section id="view-data" hidden>
-      <p class="placeholder">数据视图即将到来</p>
+      <div class="data-tip" role="note">
+        数据只存在这台手机的浏览器里。Safari 长期不打开可能被清理，建议「添加到主屏幕」并定期导出备份。
+      </div>
+      <div class="data-panel">
+        <section class="data-block">
+          <h2 class="data-title">导出</h2>
+          <p class="data-desc">生成一个 JSON 文件下载到手机，里面是全部卡片和图片，存好它是唯一的备份。</p>
+          <div class="data-row">
+            <button id="btn-export" class="btn btn-primary" type="button">导出整柜</button>
+            <span id="data-export-size" class="data-size" aria-live="polite"></span>
+          </div>
+        </section>
+        <section class="data-block">
+          <h2 class="data-title">导入</h2>
+          <p class="data-desc">选一个之前导出的 JSON 文件。合并会保留现有卡，替换会先清空再全部写入。</p>
+          <div class="data-row">
+            <button id="btn-import-merge" class="btn" type="button">导入合并</button>
+            <button id="btn-import-replace" class="btn" type="button">导入替换</button>
+          </div>
+          <input type="file" id="data-import-input" accept="application/json,.json" class="visually-hidden" tabindex="-1" aria-hidden="true">
+        </section>
+        <section class="data-block">
+          <h2 class="data-title">清空</h2>
+          <p class="data-desc">删除这台设备上的全部卡片、图片和筛选偏好，无法恢复。请先确认你已经导出备份。</p>
+          <div class="data-row">
+            <input id="data-clear-confirm" class="clear-input" type="text" autocomplete="off" placeholder='输入「清空」以解锁'>
+            <button id="btn-clear-all" class="btn" type="button" disabled>清空卡柜</button>
+          </div>
+        </section>
+      </div>
     </section>
     <section id="view-detail" hidden></section>
   </main>
