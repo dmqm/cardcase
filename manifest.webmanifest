@@ -1,0 +1,16 @@
+{
+  "name": "卡柜 Cardcase",
+  "short_name": "卡柜",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0B0B0D",
+  "theme_color": "#0B0B0D",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

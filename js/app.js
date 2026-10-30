@@ -245,3 +245,27 @@ function wireDataView() {
 wireDataView();
 
 refresh().catch((error) => toast(error?.message ?? '载入失败，请刷新重试'));
+
+/* ---------- 离线：Service Worker 注册 ---------- */
+// 注册失败静默 —— 没网也没 SW 就当普通网页用，别打断主流程。
+
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  const httpsLike = location.protocol === 'https:' || location.hostname === 'localhost';
+  if (!httpsLike) return;
+
+  navigator.serviceWorker.register('./sw.js').then((registration) => {
+    // 新 SW 已激活（skipWaiting+claim 路径），提示用户刷新拿新版。
+    registration.addEventListener('updatefound', () => {
+      const worker = registration.installing;
+      if (!worker) return;
+      worker.addEventListener('statechange', () => {
+        if (worker.state === 'activated' && navigator.serviceWorker.controller) {
+          toast('新版本已就绪，刷新后生效');
+        }
+      });
+    });
+  }).catch(() => { /* 注册失败不提示 */ });
+}
+
+window.addEventListener('load', registerServiceWorker);
