@@ -5,6 +5,7 @@ import { styleLabel } from './model.js';
 import { computeStats, listSeries, filterCards } from './query.js';
 import { getImage } from './db.js';
 import { initTilt, enableGyro } from './tilt.js';
+import { renderPoster } from './poster.js';
 
 /* ---------- 小工具 ---------- */
 
@@ -326,6 +327,85 @@ export function playCardEntrance(id) {
   timer = setTimeout(finish, ENTER_GUARD_MS);
 }
 
+/* ---------- 分享海报预览 ---------- */
+
+let posterUrl = null;
+
+/** 文件名里不能出现的字符压成 -，避免下载被系统拒绝。 */
+function safeFileName(text) {
+  return String(text ?? '').replace(/[\\/:*?"<>|]/g, '-');
+}
+
+function ensurePosterOverlay() {
+  let overlay = document.getElementById('poster-overlay');
+  if (overlay) return overlay;
+
+  overlay = document.createElement('div');
+  overlay.id = 'poster-overlay';
+  overlay.className = 'poster-overlay';
+  overlay.hidden = true;
+  overlay.innerHTML = `
+    <div class="poster-panel" role="dialog" aria-modal="true" aria-label="分享海报预览">
+      <img class="poster-img" alt="分享海报预览">
+      <p class="poster-hint">长按图片可保存到相册</p>
+      <div class="poster-actions">
+        <a class="btn btn-primary poster-save" download="cardcase.png">保存图片</a>
+        <button type="button" class="btn" data-poster-action="close">关闭</button>
+      </div>
+    </div>`;
+  document.body.append(overlay);
+
+  overlay.addEventListener('click', (event) => {
+    if (event.target === overlay) {
+      closePoster();
+      return;
+    }
+    const action = event.target.closest('[data-poster-action]')?.dataset.posterAction;
+    if (action === 'close') closePoster();
+  });
+  return overlay;
+}
+
+function closePoster() {
+  const overlay = document.getElementById('poster-overlay');
+  if (overlay) overlay.hidden = true;
+  if (posterUrl) {
+    URL.revokeObjectURL(posterUrl);
+    posterUrl = null;
+  }
+}
+
+/**
+ * 在详情页生成海报并弹出预览层。
+ * 生成中按钮置灰防连点；图片缺失 or 渲染失败都只发 toast，不炸页面。
+ */
+async function showPoster() {
+  const context = detailContext;
+  if (!context?.card) return;
+  const button = document.querySelector('#view-detail [data-action="poster"]');
+  if (button) button.disabled = true;
+  try {
+    const imageBlob = await getImage(context.card.id);
+    if (!imageBlob) {
+      toast('找不到这张卡的图片，重新入柜试试');
+      return;
+    }
+    const poster = await renderPoster(context.card, imageBlob);
+    const overlay = ensurePosterOverlay();
+    if (posterUrl) URL.revokeObjectURL(posterUrl);
+    posterUrl = URL.createObjectURL(poster);
+    overlay.querySelector('.poster-img').src = posterUrl;
+    const save = overlay.querySelector('.poster-save');
+    save.href = posterUrl;
+    save.download = `cardcase-${safeFileName(context.card.series)}-${context.card.pulledAt}.png`;
+    overlay.hidden = false;
+  } catch (error) {
+    toast(error?.message ?? '海报生成失败');
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
 /* ---------- 卡片详情 ---------- */
 
 let detailContext = null; // { card, onDelete }
@@ -341,10 +421,23 @@ function wireDetailOnce() {
     if (action === 'close') closeDetail();
     if (action === 'edit') toast('编辑功能即将上线');
     if (action === 'delete') detailContext?.onDelete?.();
+    if (action === 'poster') showPoster();
   });
 
+  // Escape 先收海报预览层，再收详情层。
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !section.hidden) closeDetail();
+    if (event.key === 'Escape' && !section.hidden) {
+      const posterOverlay = document.getElementById('poster-overlay');
+      if (posterOverlay && !posterOverlay.hidden) {
+        closePoster();
+        return;
+      }
+      closeDetail();
+    }
+    if (event.key === 'Escape' && section.hidden) {
+      const posterOverlay = document.getElementById('poster-overlay');
+      if (posterOverlay) closePoster();
+    }
   });
 }
 
@@ -380,6 +473,7 @@ export function openDetail(card, { onDelete = null } = {}) {
         <div><dt>备注</dt><dd>${note}</dd></div>
       </dl>
       <div class="detail-actions">
+        <button type="button" class="btn" data-action="poster">生成海报</button>
         <button type="button" class="btn" data-action="edit">编辑</button>
         <button type="button" class="btn btn-danger" data-action="delete">删除</button>
         <button type="button" class="btn btn-primary" data-action="close">关闭</button>
@@ -402,6 +496,7 @@ export function openDetail(card, { onDelete = null } = {}) {
 }
 
 export function closeDetail() {
+  closePoster(); // 详情关掉时海报预览一并收回
   detailContext = null;
   detailSeq += 1;
   const section = document.getElementById('view-detail');
