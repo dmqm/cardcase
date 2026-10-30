@@ -170,8 +170,8 @@ async function runImport(file) {
     const result = await importFile(file, importMode);
     if (result.ok) {
       toast(`已导入 ${result.written} 张`);
-      await refresh();
     }
+    await refresh(); // 失败也刷新：原子替换回滚后旧数据原样，重绘现状无副作用
   } catch (error) {
     toast(error?.message ?? '导入失败，再试一次');
   } finally {

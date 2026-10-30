@@ -190,3 +190,24 @@ export async function clearAll() {
     db.close();
   }
 }
+
+/**
+ * 替换整柜：在同一个 readwrite 事务里先清空 cards/images 再逐条写入。
+ * 任一步失败整体 abort，旧数据保持原样；QuotaExceededError 仍包成 StorageQuotaError。
+ * @param {Array<{card: object, blob: Blob}>} entries
+ */
+export async function importReplace(entries) {
+  const db = await openDb();
+  try {
+    await runWrite(db, [CARD_STORE, IMAGE_STORE], (tx) => {
+      tx.objectStore(CARD_STORE).clear();
+      tx.objectStore(IMAGE_STORE).clear();
+      for (const { card, blob } of entries) {
+        tx.objectStore(CARD_STORE).put(card);
+        tx.objectStore(IMAGE_STORE).put(blob, card.id);
+      }
+    });
+  } finally {
+    db.close();
+  }
+}

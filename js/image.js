@@ -121,6 +121,9 @@ export async function warpToBlob(bitmap, corners, outLongEdge = 1000, aspect = 6
   const out = outCtx.createImageData(width, height);
   const pixels = out.data;
 
+  // 让「存入中…」等 loading 态先上屏，再开始逐像素循环，避免主线程被同步占满。
+  await new Promise((r) => requestAnimationFrame(() => r()));
+
   // 行主序单应矩阵内联展开计算，1.4M 像素逐点反查。
   for (let v = 0; v < height; v++) {
     for (let u = 0; u < width; u++) {

@@ -3,7 +3,7 @@
 // 界面事件绑定在 app.js。
 
 import { createBundle, parseBundle, planMerge } from './bundle.js';
-import { clearAll, getImage, listCards, saveCard } from './db.js';
+import { getImage, importReplace, listCards, saveCard } from './db.js';
 import { blobToDataUrl, dataUrlToBlob } from './image.js';
 import { formatLocalDate } from './model.js';
 import { confirmDialog, toast } from './ui.js';
@@ -82,7 +82,7 @@ export async function exportAll() {
 
 /**
  * 导入备份文件：整包校验 → planMerge 预览 → 征询 → 写库。
- * 任何一步失败都不写库（replace 的 clearAll 在用户确认之后才发生）。
+ * 任何一步失败都不写库（replace 的整柜清空+写入在用户确认后、同一事务内原子完成）。
  * @param {File} file
  * @param {'merge'|'replace'} mode
  * @returns {Promise<{ ok: boolean, written?: number, total?: number, error?: string, cancelled?: boolean }>}
@@ -117,7 +117,21 @@ export async function importFile(file, mode) {
   });
   if (!ok) return { ok: false, cancelled: true };
 
-  if (mode === 'replace') await clearAll();
+  if (mode === 'replace') {
+    // 替换：整体原子写入。任一步失败事务 abort，旧柜原样保留。
+    const entries = [...plan.added, ...plan.overwritten].map((card) => {
+      const blob = dataUrlToBlob(card.image);
+      const { image, ...meta } = card;
+      return { card: meta, blob };
+    });
+    try {
+      await importReplace(entries);
+    } catch (error) {
+      toast(error?.message ?? '导入失败，原有卡片未改动');
+      return { ok: false, written: 0, error: error?.message ?? '写入失败' };
+    }
+    return { ok: true, written: entries.length, total: plan.total };
+  }
 
   let written = 0;
   try {
