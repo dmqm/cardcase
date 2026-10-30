@@ -447,3 +447,310 @@ main {
   opacity: 1;
   transform: translate(-50%, 0);
 }
+
+/* ---------- 导入流程 ---------- */
+
+body.import-open {
+  overflow: hidden;
+}
+
+.import-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--dur), border-color var(--dur);
+}
+
+.import-close:hover,
+.import-close:focus-visible {
+  color: var(--text);
+  border-color: var(--gold);
+}
+
+.import-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  background: rgba(11, 11, 13, .97);
+  color: var(--text);
+  color-scheme: dark; /* 原生控件（date / file）跟随深色 */
+  animation: import-in var(--dur, .2s);
+}
+
+@keyframes import-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .import-overlay {
+    animation: none;
+  }
+}
+
+.import-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--s3) var(--s4) calc(var(--s4) + env(safe-area-inset-bottom, 0px));
+  min-height: 0;
+}
+
+@media (min-width: 768px) {
+  .import-inner {
+    justify-content: center; /* 桌面居中 */
+    flex: none;
+    min-height: 480px;
+    margin: auto;
+    padding: var(--s5) var(--s6) var(--s5);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--case);
+    box-shadow: var(--shadow);
+  }
+}
+
+.import-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+
+.import-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--gold);
+}
+
+/* 第一步：选图 */
+
+.import-step {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* 第一步：选图 */
+
+.import-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s3);
+  flex: 1;
+  text-align: center;
+}
+
+.import-pick-btn {
+  width: min(100%, 280px);
+  min-height: 56px;
+}
+
+.import-hint {
+  margin: var(--s2) 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* 第二步：校正 */
+
+.crop-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.crop-board {
+  position: relative;
+  touch-action: none;
+}
+
+.crop-board canvas {
+  display: block;
+  border: 1px solid var(--line);
+}
+
+.crop-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(200, 169, 106, .55) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(200, 169, 106, .55) 1px, transparent 1px);
+  background-size: 33.333% 33.333%, 33.333% 33.333%;
+  background-position: -1px -1px;
+}
+
+.crop-handle {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px; /* 触控达标 */
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  background: rgba(200, 169, 106, .18);
+  transform: translate(-50%, -50%);
+  color: var(--gold);
+  font: inherit;
+  font-size: 12px;
+  touch-action: none;
+  cursor: grab;
+  transition: transform var(--dur);
+}
+
+.crop-handle:active {
+  transform: translate(-50%, -50%) scale(.9);
+}
+
+.crop-handle:focus-visible {
+  background: rgba(200, 169, 106, .45);
+  outline: none;
+}
+
+.crop-tools {
+  display: flex;
+  gap: var(--s3);
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: var(--s3) 0;
+}
+
+/* 第三步：表单 */
+
+.import-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.import-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.import-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.import-label .req {
+  color: var(--gold);
+  font-style: normal;
+}
+
+.import-label .req {
+  color: var(--gold);
+  font-style: normal;
+}
+
+.import-field input:not([type='radio']),
+.import-field textarea {
+  min-height: 44px;
+  padding: 0 var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px; /* 防 iOS 聚焦放大 */
+  transition: border-color var(--dur);
+}
+
+.import-field textarea {
+  padding: var(--s2) var(--s3);
+}
+
+.import-field input:focus-visible,
+.import-field textarea:focus-visible {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.import-style {
+  flex-direction: row;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+
+.import-style legend {
+  flex: 1 0 100%;
+  padding: 0;
+}
+
+.style-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  min-height: 44px;
+  padding: 0 var(--s3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color var(--dur), color var(--dur);
+}
+
+.style-opt:has(input:checked) {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.style-opt input {
+  accent-color: var(--gold);
+}
+
+.import-actions {
+  display: flex;
+  gap: var(--s3);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding-top: var(--s3);
+}

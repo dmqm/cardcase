@@ -6,6 +6,7 @@ import { listSeries } from './query.js';
 import { deleteCard, listCards } from './db.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { closeDetail, confirmDialog, openDetail, renderGallery, toast } from './ui.js';
+import { openImport } from './import-flow.js';
 
 const VIEWS = ['gallery', 'data'];
 
@@ -111,6 +112,10 @@ document.addEventListener('click', (event) => {
   if (type === 'series') setPrefs({ series: value });
   else if (type === 'style') setPrefs({ style: value });
   else if (type === 'sort') setPrefs({ sort: value });
+});
+
+document.getElementById('fab-import')?.addEventListener('click', () => {
+  openImport({ onSaved: refresh });
 });
 
 refresh().catch((error) => toast(error?.message ?? '载入失败，请刷新重试'));
